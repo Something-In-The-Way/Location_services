@@ -101,15 +101,15 @@ class Services:
                 UserCoordinates = self.getGPSLocation()["Result"]["location"]
             else:
                 UserCoordinates = self.getUserLocation(UserAddressString)["Result"]["location"]
-            #PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, rank_by = 'distance')
-            URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+            PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, rank_by = 'distance')
+            '''URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
             PARAMS = {}
             PARAMS["key"] = "{}".format(self.apiKey_string.read())
             PARAMS["location"] = str(UserCoordinates["lat"]) + "," + str(UserCoordinates["lng"])
             PARAMS["keyword"] = searchString
             PARAMS["rankby"] = "distance"
             r = requests.get(url = URL, params = PARAMS) 
-            PlacesSearch = r.json() 
+            PlacesSearch = r.json() '''
             PlacesResult = PlacesSearch['results']
             for places in PlacesResult:
                 if "photos" in places.keys():
@@ -127,7 +127,7 @@ class Services:
                     places.pop("geometry")
                 if "vicinity" in places.keys():
                     places["formatted_address"]=places.pop("vicinity")
-            return {"sourceLocation":UserCoordinates,"OriginalResult": PlacesSearch,"Result":PlacesResult}
+            return {"Result":PlacesResult}
             
         except Exception as e:
             logger.error("Error occured in searchPlaces:{}".format(e))
