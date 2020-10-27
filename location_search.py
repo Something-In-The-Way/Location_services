@@ -100,8 +100,10 @@ class Services:
             else:
                 UserLocation = self.getUserLocation(UserAddressString)["Result"]
             UserCoordinates = UserLocation["location"]
-            PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, rank_by = 'distance',open_now = False)
+            PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, rank_by = 'distance')
             PlacesResult = PlacesSearch['results']
+            print(PlacesResult)
+            logger.debug(str(PlacesResult))
             '''jsonold = []
             i = 0'''
             for places in PlacesResult:
