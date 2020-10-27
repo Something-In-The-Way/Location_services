@@ -6,6 +6,7 @@ import logging
 from flask import Flask, request, jsonify
 import googlemaps
 import datetime
+import requests
 
 app = Flask(__name__)
 
@@ -64,7 +65,8 @@ class Services:
     def __init__(self, BqClient, GmapClient):
         self.BqClient = BqClient
         self.GmapClient = GmapClient
-
+        self.apiKey_string = open(apiKey_file, "r")
+        
     def getGPSLocation(self):
         try:
             coordinates = self.GmapClient.geolocate()
@@ -99,9 +101,15 @@ class Services:
                 UserCoordinates = self.getGPSLocation()["Result"]["location"]
             else:
                 UserCoordinates = self.getUserLocation(UserAddressString)["Result"]["location"]
-            PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, radius = 5000)
-            #, rank_by = 'distance')
-            #PlacesSearch = self.GmapClient.places(query=searchString, location = UserCoordinates)
+            #PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, rank_by = 'distance')
+            URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+            PARAMS = {}
+            PARAMS["key"] = "{}".format(self.apiKey_string.read())
+            PARAMS["location"] = str(UserCoordinates["lat"]) + "," + str(UserCoordinates["lng"])
+            PARAMS["keyword"] = searchString
+            PARAMS["rankby"] = "distance"
+            r = requests.get(url = URL, params = PARAMS) 
+            PlacesSearch = r.json() 
             PlacesResult = PlacesSearch['results']
             for places in PlacesResult:
                 if "photos" in places.keys():
