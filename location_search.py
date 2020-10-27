@@ -1,20 +1,13 @@
 import google.auth
 import os
 import google.cloud.bigquery as bigquery
-import pandas as pd
 import json
-import jsonify
-import requests
 import logging
-from flask import Flask, request
-import warnings
+from flask import Flask, request, jsonify
 import googlemaps
 import datetime
-import base64
-import requests as req
 
 app = Flask(__name__)
-warnings.filterwarnings('ignore')
 
 global cred_file
 cred_file = "./credentials.json"
@@ -112,14 +105,21 @@ class Services:
             '''jsonold = []
             i = 0'''
             for places in PlacesResult:
-                places.pop("photos")
-                places.pop("plus_code")
-                places.pop("types")
-                places.pop("reference")
-                places.pop("scope")
-                places["location"] = places["geometry"]["location"]
-                places.pop("geometry")
-                places["formatted_address"]=places.pop("vicinity")
+                if "photos" in places.keys():
+                    places.pop("photos")
+                if "plus_code" in places.keys():
+                    places.pop("plus_code")
+                if "types" in places.keys():
+                    places.pop("types")
+                if "reference" in places.keys():
+                    places.pop("reference")
+                if "scope" in places.keys():
+                    places.pop("scope")
+                if "geometry" in places.keys():
+                    places["location"] = places["geometry"]["location"]
+                    places.pop("geometry")
+                if "vicinity" in places.keys():
+                    places["formatted_address"]=places.pop("vicinity")
                 '''jsonnew = {}
                 jsonnew['placeId'] = places['place_id']
                 jsonnew['placeName'] = places['name']
@@ -139,9 +139,9 @@ class Services:
     def SelectPlace(self,keyword,place_id):
         try:
             PlaceDetails = self.GmapClient.place(place_id = place_id, fields = ['formatted_address', 'geometry', 'icon', 'name', 'permanently_closed', 'place_id', 'url', 'formatted_phone_number', 'opening_hours', 'website', 'rating'])["result"]
-
-            PlaceDetails["location"] = PlaceDetails["geometry"]["location"]
-            PlaceDetails.pop("geometry")
+            if "geometry" in PlaceDetails.keys():
+                PlaceDetails["location"] = PlaceDetails["geometry"]["location"]
+                PlaceDetails.pop("geometry")
             if "opening_hours" in PlaceDetails.keys():
                 PlaceDetails["opening_hours"].pop("periods")
             query = QueryFormatter(keyword)
@@ -186,6 +186,7 @@ class Services:
 def gps_detected_address():
     try:
         Result = Services(BqClient,GmapClient).getGPSLocation()
+        logger.info("The result is:",str(Result))
         return Result
     except Exception as e:
         logger.error("Error occured in gps detection address service as: " + str(e))
@@ -194,8 +195,8 @@ def gps_detected_address():
 def user_input_address():
     try:
         AddressString = str(request.args.get('AddressString',default= 'No_ADDRESS'))
-        print(AddressString, type(AddressString))
         Result = Services(BqClient,GmapClient).getUserLocation(UserAddressString=AddressString)
+        logger.info("The result is:",str(Result))
         return Result
     except Exception as e:
         logger.error("Error occured in user input address service as: " + str(e))
@@ -205,6 +206,7 @@ def places_search():
     try:
         AddressString = str(request.args.get('AddressString',default= 'No_ADDRESS'))
         Result = Services(BqClient,GmapClient).searchPlaces(UserAddressString=AddressString)
+        logger.info("The result is:",str(Result))
         return Result
     except Exception as e:
         logger.error("Error occured in places search service as: " + str(e))
@@ -214,6 +216,7 @@ def places_details():
     try:
         place_id = str(request.args['placeId'])
         Result = Services(BqClient,GmapClient).SelectPlace(keyword = "GET_PLACE_DETAILS",place_id=place_id)
+        logger.info("The result is:",str(Result))
         return Result
     except Exception as e:
         logger.error("Error occured in places details service as: " + str(e))
@@ -224,6 +227,7 @@ def place_distance():
         place_id = str(request.args['placeId'])
         AddressString = str(request.args.get('AddressString',default= 'No_ADDRESS'))
         Result = Services(BqClient,GmapClient).PlaceDistance(place_id=place_id, UserAddressString = AddressString)
+        logger.info("The result is:",str(Result))
         return Result
     except Exception as e:
         logger.error("Error occured in place distance service as: " + str(e))
@@ -235,7 +239,7 @@ def internal_error(error):
     error_500 = jsonify({
         'timestamp': utc_datetime,
         'error': error.code,
-        'error status': repr(error),
+        'error status': str(error),
         'Message': 'The server encountered an unexpected condition that prevented it from fulfilling the request.',
         'path': '/get_user_location/data/'
     })
@@ -249,7 +253,7 @@ def not_found(error):
     error_404 = jsonify({
         'timestamp': utc_datetime,
         'error': error.code,
-        'error status': repr(error),
+        'error status': str(error),
         'Message': 'The request was valid, but no results were returned.',
         'path': '/get_user_location/data/'
     })
@@ -263,7 +267,7 @@ def not_found(error):
     error_403 = jsonify({
         'timestamp': utc_datetime,
         'error': error.code,
-        'error status': repr(error),
+        'error status': str(error),
         'Message': 'You have exceeded the request limit that you configured in the Google Cloud Platform Console.',
         'path': '/get_user_location/data/'
     })
@@ -277,7 +281,7 @@ def not_found(error):
     error_400 = jsonify({
         'timestamp': utc_datetime,
         'error': error.code,
-        'error status': repr(error),
+        'error status': str(error),
         'Message': 'Your API key is not valid for the Geolocation API or The request body is not a valid JSON.',
         'path': '/get_user_location/data/'
     })

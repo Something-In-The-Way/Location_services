@@ -1,6 +1,4 @@
 flask
-pandas
-jsonify
 googlemaps
 google-auth
 google-cloud-bigquery
