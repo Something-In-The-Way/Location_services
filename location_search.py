@@ -100,10 +100,9 @@ class Services:
             else:
                 UserLocation = self.getUserLocation(UserAddressString)["Result"]
             UserCoordinates = UserLocation["location"]
-            PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, rank_by = 'distance')
+            #PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, rank_by = 'distance')
+            PlacesSearch = self.GmapClient.places(query=searchString, location = UserAddressString)
             PlacesResult = PlacesSearch['results']
-            print(PlacesResult)
-            logger.debug(str(PlacesResult))
             '''jsonold = []
             i = 0'''
             for places in PlacesResult:
@@ -292,7 +291,7 @@ def not_found(error):
 
 if __name__ == '__main__':
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     BqClient = Authenticate(cred_file, apiKey_file).bq_client()
     GmapClient = Authenticate(cred_file, apiKey_file).gmap_client()
     app.run(host='0.0.0.0', port=7643, debug=True)
