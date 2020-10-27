@@ -96,15 +96,13 @@ class Services:
     def searchPlaces(self, UserAddressString, searchString = "Sports Complexes And Games Facilities"):
         try:
             if UserAddressString == "No_ADDRESS":
-                UserLocation = self.getGPSLocation()["Result"]
+                UserCoordinates = self.getGPSLocation()["Result"]["location"]
             else:
-                UserLocation = self.getUserLocation(UserAddressString)["Result"]
-            UserCoordinates = UserLocation["location"]
-            #PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, rank_by = 'distance')
-            PlacesSearch = self.GmapClient.places(query=searchString, location = UserAddressString)
+                UserCoordinates = self.getUserLocation(UserAddressString)["Result"]["location"]
+            PlacesSearch = self.GmapClient.places_nearby(keyword=searchString, location = UserCoordinates, radius = 5000)
+            #, rank_by = 'distance')
+            #PlacesSearch = self.GmapClient.places(query=searchString, location = UserCoordinates)
             PlacesResult = PlacesSearch['results']
-            '''jsonold = []
-            i = 0'''
             for places in PlacesResult:
                 if "photos" in places.keys():
                     places.pop("photos")
@@ -121,18 +119,7 @@ class Services:
                     places.pop("geometry")
                 if "vicinity" in places.keys():
                     places["formatted_address"]=places.pop("vicinity")
-                '''jsonnew = {}
-                jsonnew['placeId'] = places['place_id']
-                jsonnew['placeName'] = places['name']
-                jsonnew['location'] = str({"type": "Point", "coordinates": [places['location']['lng'],places['location']['lat']]})
-                if i%2 == 0 :
-                    jsonnew['registered'] = True
-                else :
-                    jsonnew['registered'] = False
-                jsonold.append(jsonnew)
-                i+=1
-                return {"Result": jsonold}'''
-            return {"Result":PlacesResult}
+            return {"sourceLocation":UserCoordinates,"OriginalResult": PlacesSearch,"Result":PlacesResult}
             
         except Exception as e:
             logger.error("Error occured in searchPlaces:{}".format(e))
